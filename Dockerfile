@@ -1,5 +1,5 @@
 # Use Node.js LTS version as base image
-FROM node:18-fake-tag
+FROM node:18
 
 # Set working directory
 WORKDIR /app
