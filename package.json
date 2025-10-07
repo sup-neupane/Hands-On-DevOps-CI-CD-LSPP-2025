@@ -1,0 +1,25 @@
+{
+  "name": "calculator-devops",
+  "version": "1.0.0",
+  "description": "A simple calculator web app for DevOps CI/CD",
+  "main": "src/calculator.js",
+  "scripts": {
+    "start": "node src/calculator.js",
+    "test": "node test/calculator.test.js"
+  },
+  "keywords": [
+    "calculator",
+    "devops",
+    "cicd",
+    "docker"
+  ],
+  "author": "Suparna Neupane",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "directories": {
+    "test": "test"
+  }
+}

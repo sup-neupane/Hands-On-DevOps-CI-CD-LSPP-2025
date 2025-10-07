@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevOps Calculator</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .calculator-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 30px;
+        max-width: 400px;
+        width: 100%;
+      }
+
+      h1 {
+        text-align: center;
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #999;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .display {
+        background: #f7f7f7;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .display-operation {
+        font-size: 14px;
+        color: #999;
+        margin-bottom: 5px;
+      }
+
+      .display-result {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+        word-wrap: break-word;
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #666;
+        font-size: 14px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .button-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .btn-calculate {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        grid-column: span 2;
+      }
+
+      .btn-calculate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-clear {
+        background: #f44336;
+        color: white;
+      }
+
+      .btn-clear:hover {
+        background: #d32f2f;
+        transform: translateY(-2px);
+      }
+
+      .error {
+        background: #ffebee;
+        color: #c62828;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 15px;
+        display: none;
+      }
+
+      .error.show {
+        display: block;
+      }
+
+      .history {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #e0e0e0;
+      }
+
+      .history-title {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .history-item {
+        background: #f7f7f7;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .no-history {
+        color: #999;
+        font-size: 13px;
+        font-style: italic;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="calculator-container">
+      <h1>🧮 Calculator</h1>
+      <p class="subtitle">DevOps CI/CD Assignment</p>
+
+      <div class="display">
+        <div id="operation-display" class="display-operation">
+          Ready to calculate
+        </div>
+        <div id="result-display" class="display-result">0</div>
+      </div>
+
+      <div class="input-group">
+        <label for="num1">First Number:</label>
+        <input type="number" id="num1" placeholder="Enter first number" />
+      </div>
+
+      <div class="input-group">
+        <label for="operation">Operation:</label>
+        <select id="operation">
+          <option value="add">➕ Addition (+)</option>
+          <option value="subtract">➖ Subtraction (−)</option>
+          <option value="multiply">✖️ Multiplication (×)</option>
+          <option value="divide">➗ Division (÷)</option>
+          <option value="power">🔢 Power (^)</option>
+          <option value="sqrt">√ Square Root (√)</option>
+        </select>
+      </div>
+
+      <div class="input-group" id="num2-group">
+        <label for="num2">Second Number:</label>
+        <input type="number" id="num2" placeholder="Enter second number" />
+      </div>
+
+      <div class="button-grid">
+        <button class="btn-calculate" onclick="calculate()">Calculate</button>
+        <button class="btn-clear" onclick="clearCalculator()">Clear</button>
+      </div>
+
+      <div id="error-display" class="error"></div>
+
+      <div class="history">
+        <div class="history-title">Recent Calculations:</div>
+        <div id="history-list" class="no-history">No calculations yet</div>
+      </div>
+    </div>
+
+    <script>
+      let calculationHistory = [];
+      const operationSelect = document.getElementById("operation");
+      const num2Group = document.getElementById("num2-group");
+
+      operationSelect.addEventListener("change", function () {
+        num2Group.style.display = this.value === "sqrt" ? "none" : "block";
+      });
+
+      async function calculate() {
+        const num1Input = document.getElementById("num1").value;
+        const num2Input = document.getElementById("num2").value;
+        const operation = document.getElementById("operation").value;
+        const errorDisplay = document.getElementById("error-display");
+
+        errorDisplay.classList.remove("show");
+
+        if (!num1Input) return showError("Please enter the first number");
+        if (operation !== "sqrt" && !num2Input)
+          return showError("Please enter the second number");
+
+        const requestBody = { operation, num1: parseFloat(num1Input) };
+        if (operation !== "sqrt") requestBody.num2 = parseFloat(num2Input);
+
+        try {
+          const response = await fetch("http://localhost:3000/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+            displayResult(data);
+            addToHistory(data);
+          } else {
+            showError(data.error || "Calculation failed");
+          }
+        } catch {
+          showError("Failed to connect to server");
+        }
+      }
+
+      function displayResult(data) {
+        const symbols = {
+          add: "+",
+          subtract: "−",
+          multiply: "×",
+          divide: "÷",
+          power: "^",
+          sqrt: "√",
+        };
+        const opText =
+          data.operation === "sqrt"
+            ? `√${data.num1}`
+            : `${data.num1} ${symbols[data.operation]} ${data.num2}`;
+        document.getElementById("operation-display").textContent = opText;
+        document.getElementById("result-display").textContent =
+          data.result.toFixed(4);
+      }
+
+      function addToHistory(data) {
+        const symbols = {
+          add: "+",
+          subtract: "−",
+          multiply: "×",
+          divide: "÷",
+          power: "^",
+          sqrt: "√",
+        };
+        const entry =
+          data.operation === "sqrt"
+            ? `√${data.num1} = ${data.result.toFixed(4)}`
+            : `${data.num1} ${symbols[data.operation]} ${
+                data.num2
+              } = ${data.result.toFixed(4)}`;
+        calculationHistory.unshift(entry);
+        if (calculationHistory.length > 5) calculationHistory.pop();
+        updateHistoryDisplay();
+      }
+
+      function updateHistoryDisplay() {
+        const list = document.getElementById("history-list");
+        list.innerHTML = calculationHistory.length
+          ? calculationHistory
+              .map((h) => `<div class="history-item">${h}</div>`)
+              .join("")
+          : '<div class="no-history">No calculations yet</div>';
+      }
+
+      function showError(msg) {
+        const errorDisplay = document.getElementById("error-display");
+        errorDisplay.textContent = msg;
+        errorDisplay.classList.add("show");
+      }
+
+      function clearCalculator() {
+        document.getElementById("num1").value = "";
+        document.getElementById("num2").value = "";
+        document.getElementById("operation").value = "add";
+        document.getElementById("operation-display").textContent =
+          "Ready to calculate";
+        document.getElementById("result-display").textContent = "0";
+        document.getElementById("error-display").classList.remove("show");
+        num2Group.style.display = "block";
+      }
+
+      document.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") calculate();
+      });
+    </script>
+  </body>
+</html>

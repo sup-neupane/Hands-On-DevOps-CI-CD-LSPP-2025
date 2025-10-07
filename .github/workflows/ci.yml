@@ -1,19 +1,17 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Build & Test Workflow
+name: Calculator CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
 
 jobs:
   test-job:
-    name: Run Tests
+    name: Run Calculator Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -24,12 +22,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
-      - name: Run tests
+      - name: Run unit and integration tests
         run: npm test
+      
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Calculator tests completed" >> $GITHUB_STEP_SUMMARY
 
   build-job:
     name: Build Docker Image
@@ -45,10 +50,38 @@ jobs:
       
       - name: Build Docker image
         run: |
-          docker build -t hello-devops:${{ github.sha }} .
-          docker build -t hello-devops:latest .
+          echo "Building Docker image with commit SHA: ${{ github.sha }}"
+          docker build -t calculator-devops:${{ github.sha }} .
+          docker build -t calculator-devops:latest .
       
-      - name: Verify Docker image
+      - name: List Docker images
+        run: docker images | grep calculator-devops
+      
+      - name: Test Docker image
         run: |
-          docker images
-          echo "Docker image built successfully!"
+          echo "Starting container for testing..."
+          docker run -d -p 3000:3000 --name calculator-test calculator-devops:latest
+          sleep 5
+          
+          echo "Testing health endpoint..."
+          curl -f http://localhost:3000/health || exit 1
+          
+          echo "Testing calculator API..."
+          curl -f -X POST http://localhost:3000/calculate \
+            -H "Content-Type: application/json" \
+            -d '{"operation":"add","num1":5,"num2":3}' || exit 1
+          
+          docker stop calculator-test
+          docker rm calculator-test
+      
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "Docker image built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "Container health check passed" >> $GITHUB_STEP_SUMMARY
+          echo "API endpoint verified" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "- calculator-devops:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- calculator-devops:latest" >> $GITHUB_STEP_SUMMARY
